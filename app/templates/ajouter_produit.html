@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ajouter un produit</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(120deg, #2980b9, #6dd5fa);
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .form-container {
+            background: white;
+            padding: 20px 30px;
+            border-radius: 10px;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+            width: 100%;
+            max-width: 600px;
+        }
+        input, select, button {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            font-size: 16px;
+        }
+        button {
+            background: #2980b9;
+            color: white;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #6dd5fa;
+        }
+        .dropdown {
+            position: relative;
+        }
+        .dropdown-button {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            font-size: 16px;
+            background-color: #f9f9f9;
+            cursor: pointer;
+        }
+        .dropdown-menu {
+            display: none;
+            position: absolute;
+            background: white;
+            width: 100%;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            max-height: 150px;
+            overflow-y: auto;
+            z-index: 1000;
+        }
+        .dropdown-menu div {
+            display: flex;
+            align-items: center;
+            padding: 8px;
+            border-bottom: 1px solid #f1f1f1; /* Légère séparation */
+        }
+        .dropdown-menu div:last-child {
+            border-bottom: none; /* Pas de ligne sous le dernier élément */
+        }
+        .dropdown-menu input[type="checkbox"] {
+            margin-right: 5px;
+            flex-shrink: 0;
+        }
+        .dropdown.open .dropdown-menu {
+            display: block;
+        }
+        .dropdown-menu label.ingredient-label {
+            font-size: 14px;
+            flex-grow: 1; /* Garder l'équilibre entre la case et le texte */
+            margin-left: 5px; /* Réduit l'espace entre la case à cocher et le texte */
+        }
+    </style>
+</head>
+<body>
+    <div class="form-container">
+        <h2>Ajouter un produit</h2>
+        <form method="POST" action="{{ url_for('routes.ajouter_produit') }}">
+            <label for="name">Nom du produit</label>
+            <input type="text" id="name" name="name" required>
+            <label for="gamme">Gamme</label>
+            <select id="gamme" name="gamme" required>
+                <option value="" disabled selected>Choisissez la gamme</option>
+                <option value="masculin">Masculin</option>
+                <option value="feminin">Féminin</option>
+                <option value="mixte">Mixte</option>
+            </select>
+            <label for="date_echeance">Date d'échéance</label>
+            <input type="date" id="date_echeance" name="date_echeance" required>
+            <label for="username">Username de l'utilisateur associé</label>
+            <input type="text" id="username" name="username" required>
+            <label for="ingredients">Ingrédients</label>
+            <div class="dropdown">
+                <button type="button" class="dropdown-button" id="dropdown-button">Sélectionner les ingrédients</button>
+                <div class="dropdown-menu" id="dropdown-menu">
+                    {% for ingredient in ingredients %}
+                        <div>
+                            <label class="ingredient-label" for="ingredient_{{ ingredient.id }}">{{ ingredient.name }}</label>
+                            <input type="checkbox" id="ingredient_{{ ingredient.id }}" name="ingredients" value="{{ ingredient.id }}">
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+            <button type="submit">Ajouter le produit</button>
+        </form>
+    </div>
+    <script>
+        const dropdownButton = document.getElementById('dropdown-button');
+        const dropdownMenu = document.getElementById('dropdown-menu');
+        const dropdown = dropdownButton.parentElement;
+
+        dropdownButton.addEventListener('click', () => {
+            dropdown.classList.toggle('open');
+        });
+
+        // Close dropdown if clicked outside
+        document.addEventListener('click', (event) => {
+            if (!dropdown.contains(event.target)) {
+                dropdown.classList.remove('open');
+            }
+        });
+    </script>
+</body>
+</html>

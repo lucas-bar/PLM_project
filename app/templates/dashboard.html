@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DashBoard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(120deg, #2980b9, #6dd5fa);
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background: white;
+            padding: 20px 30px;
+            border-radius: 10px;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+            width: 100%;
+            max-width: 700px;
+            text-align: center;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+            border: 1px solid #ddd;
+        }
+        th {
+            background: #2980b9;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background: #f2f2f2;
+        }
+        tr.selected {
+            background: #d0e1f9; /* Couleur de fond pour la ligne sélectionnée */
+        }
+        button {
+            padding: 10px 15px;
+            background: #2980b9;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
+            font-size: 14px;
+        }
+        button:hover {
+            background: #6dd5fa;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Liste des ingrédients</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Nom de l'ingrédient</th>
+                    <th>Prix</th>
+                    <th>Quantité</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ingredient in ingredients %}
+                <tr onclick="selectRow(this, '{{ ingredient.id }}')">
+                    <td>{{ ingredient.name }}</td>
+                    <td>{{ ingredient.price }} €</td>
+                    <td>{{ ingredient.quantity }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <button onclick="window.location.href='{{ url_for('routes.ajouter_ingredient') }}'">Ajouter un ingrédient</button>
+        <h2>Liste des produits</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Nom du produit</th>
+                    <th>Username</th>
+                    <th>Avancement</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for produit in produits %}
+                <tr onclick="selectRow(this, '{{ produit.id }}')">
+                    <td>{{ produit.name }}</td>
+                    <td>{{ produit.details.username }}</td>
+                    <td>{{ produit.details.evolution_state }}%</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <button onclick="window.location.href='{{ url_for('routes.ajouter_produit') }}'">Ajouter un produit</button>
+        <button id="modifierButton" disabled onclick="modifySelected()">Modifier</button>
+    </div>
+    <script>
+        let selectedRow = null;
+        let selectedId = null;
+
+        function selectRow(row, id) {
+            // Deselect the previously selected row
+            if (selectedRow) {
+                selectedRow.classList.remove("selected");
+            }
+
+            // Select the current row
+            selectedRow = row;
+            selectedRow.classList.add("selected");
+
+            // Store the selected product ID
+            selectedId = id;
+
+            // Enable the "Modifier" button
+            document.getElementById("modifierButton").disabled = false;
+        }
+
+        function modifySelected() {
+            if (selectedId) {
+                // Construire directement l'URL avec l'ID sélectionné
+                window.location.href = `/modifier-produit/${selectedId}`;
+            }
+        }
+    </script>
+</body>
+</html>

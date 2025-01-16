@@ -1,166 +1,227 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, render_template, flash, redirect, url_for, session
 from app import db
-from app.models import User, Product, UserProduct, Project  
+from app.models import User, Ingredient, Product, Product_detail, product_ingredients, Comment
+from werkzeug.security import generate_password_hash, check_password_hash
+import logging
+from datetime import datetime
 
-
-# Créer un blueprint pour les routes
 bp = Blueprint('routes', __name__)
 
-# Route pour l'enregistrement d'un utilisateur
-@bp.route('/register', methods=['POST'])
-def register():
-    data = request.json
-    new_user = User(username=data['username'], password=data['password'])
-    db.session.add(new_user)
-    db.session.commit()
-    return jsonify({"message": "Utilisateur créé avec succès."}), 201
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
-# Route pour la connexion d'un utilisateur
-@bp.route('/login', methods=['POST'])
+@bp.route('/acceuil', methods=['GET', 'POST'])
+def acceuil():
+    return render_template('acceuil.html')
+
+@bp.route('/login', methods=['GET', 'POST'])
 def login():
-    data = request.json
-    user = User.query.filter_by(username=data['username']).first()
-    if user and user.password == data['password']:
-        return jsonify({"message": "Connexion réussie."}), 200
-    return jsonify({"message": "Nom d'utilisateur ou mot de passe incorrect."}), 401
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        user = User.query.filter_by(username=username).first()
+        if user and check_password_hash(user.password, password):
+            session['user_id'] = user.id  
+            flash('You have been successfully logged in!', 'success')
+            return redirect(url_for('routes.dashboard'))
+        else:
+            flash('Invalid username or password. Please try again.', 'danger')
+    return render_template('login.html')
 
-# Route pour ajouter un produit
-@bp.route('/products', methods=['POST'])
-def add_product():
-    data = request.json
-    new_product = Product(name=data['name'], description=data['description'], version=data['version'], stock=data['stock'])
-    db.session.add(new_product)
-    db.session.commit()
-    return jsonify({"message": "Produit ajouté avec succès."}), 201
+@bp.route('/logout')
+def logout():
+    session.pop('user_id', None)
+    flash("Vous êtes déconnecté.", "success")
+    return redirect(url_for('routes.login'))
 
-# Route pour obtenir tous les produits
-@bp.route('/products', methods=['GET'])
-def get_products():
-    products = Product.query.all()
-    return jsonify([{"id": p.id, "name": p.name, "description": p.description, "version": p.version, "stock": p.stock} for p in products]), 200
 
-# Route pour assigner un utilisateur à un produit
-@bp.route('/assign_user', methods=['POST'])
-def assign_user():
-    data = request.json
-    user_product = UserProduct(user_id=data['user_id'], product_id=data['product_id'], role=data['role'])
-    db.session.add(user_product)
-    db.session.commit()
-    return jsonify({"message": "Utilisateur assigné au produit avec succès."}), 201
-
-# Route pour obtenir les détails d'un produit
-@bp.route('/products/details', methods=['GET'])
-def product_details():
-    product_id = request.args.get('id')
-    product = Product.query.get(product_id)
-
-    if not product:
-        return jsonify({"message": "Produit non trouvé."}), 404
-
-    return jsonify({
-        "id": product.id,
-        "name": product.name,
-        "description": product.description,
-        "stock": product.stock,
-        "version": product.version,
-        "users": [{"id": user.id, "username": user.username} for user in product.users]
-    }), 200
-
-# Assurez-vous de lier le blueprint à l'application
-def register_routes(app):
-    app.register_blueprint(bp, url_prefix='/api')
-    
-# Route pour créer un projet
-@bp.route('/projects', methods=['POST'])
-def create_project():
-    data = request.json
-    new_project = Project(name=data['name'], description=data['description'])
-    db.session.add(new_project)
-    db.session.commit()
-    return jsonify({"message": "Projet créé avec succès.", "project_id": new_project.id}), 201
-
-# Route pour ajouter un produit à un projet
-@bp.route('/projects/<int:project_id>/products', methods=['POST'])
-def add_product_to_project(project_id):
-    data = request.json
-    product = Product(name=data['name'], description=data['description'], version=data['version'], stock=data['stock'], project_id=project_id)
-    db.session.add(product)
-    db.session.commit()
-    return jsonify({"message": "Produit ajouté au projet."}), 201
-
-# Route pour supprimer un produit d'un projet
-@bp.route('/projects/<int:project_id>/products/<int:product_id>', methods=['DELETE'])
-def remove_product_from_project(project_id, product_id):
-    product = Product.query.filter_by(id=product_id, project_id=project_id).first()
-    if not product:
-        return jsonify({"message": "Produit non trouvé."}), 404
-    db.session.delete(product)
-    db.session.commit()
-    return jsonify({"message": "Produit supprimé du projet."}), 200
-
-# Route pour affecter un utilisateur à un produit dans un projet
-@bp.route('/projects/<int:project_id>/assign_user', methods=['POST'])
-def assign_user_to_product(project_id):
-    data = request.json
-    user_product = UserProduct(user_id=data['user_id'], product_id=data['product_id'], project_id=project_id, role=data['role'])
-    db.session.add(user_product)
-    db.session.commit()
-    return jsonify({"message": "Utilisateur assigné au produit avec succès."}), 201
+@bp.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        user = User.query.filter_by(username=username).first()
+        if user:
+            flash('Username already exists!', 'danger')
+            return redirect(url_for('routes.register'))
+        hashed_password = generate_password_hash(password, method='sha256')
+        new_user = User(username=username, password=hashed_password)
+        db.session.add(new_user)
+        db.session.commit()
+        flash('Account created successfully!', 'success')
+        return redirect(url_for('routes.login'))
+    return render_template('register.html')
 
 @bp.route('/dashboard', methods=['GET'])
 def dashboard():
-    projects = Project.query.all()
-    dashboard_data = {
-        "projects": [],
-        "total_products": 0,
-        "total_stock": 0,
-    }
-    
-    for project in projects:
-        project_data = {
-            "id": project.id,
-            "name": project.name,
-            "total_products": len(project.products),
-            "total_stock": sum([p.stock for p in project.products]),
-        }
-        dashboard_data["projects"].append(project_data)
-        dashboard_data["total_products"] += project_data["total_products"]
-        dashboard_data["total_stock"] += project_data["total_stock"]
+    if 'user_id' not in session:
+        return redirect(url_for('routes.login')) 
+    user_id = session['user_id']
+    user = User.query.get(user_id)  
+    if not user:
+        return redirect(url_for('routes.login'))  
+    ingredients = Ingredient.query.all()
+    produits = Product.query.all() 
+    for produit in produits:
+        produit.details = Product_detail.query.filter_by(product_id=produit.id).first()
+    return render_template('dashboard.html', user=user, produits=produits, ingredients=ingredients)
 
-    return jsonify(dashboard_data), 200
+@bp.route('/ajouter-ingredient', methods=['GET', 'POST'])
+def ajouter_ingredient():
+    if request.method == 'POST':
+        nom = request.form.get('nom')
+        prix = request.form.get('prix')
+        quantite = request.form.get('quantite')
+        if not nom or not prix or not quantite:
+            flash('Tous les champs sont obligatoires.', 'error')
+            return redirect(url_for('routes.ajouter_produit'))
+        try:
+            prix = float(prix)
+            quantite = int(quantite)
+            new_ingredient = Ingredient(name=nom, price=prix, quantity=quantite)
+            db.session.add(new_ingredient)
+            db.session.commit()
+            flash('Produit ajouté avec succès.', 'success')
+            return redirect(url_for('routes.dashboard'))
+        except ValueError:
+            flash('Le prix doit être un nombre décimal et la quantité un entier.', 'error')
+    return render_template('ajouter_ingredient.html')
 
-@bp.route('/products/search', methods=['GET'])
-def search_products():
-    status = request.args.get('status')
-    if status not in ['fabriqué', 'en stock', 'détruit', 'défectueux', 'livré']:
-        return jsonify({"message": "Statut non valide."}), 400
-    
-    # Remplacer par votre logique de filtrage de produits
-    # C'est un exemple, vous devez adapter la logique en fonction de votre base de données.
-    products = Product.query.filter_by(status=status).all()  # Exemple de recherche
-    return jsonify([{"id": p.id, "name": p.name} for p in products]), 200
+@bp.route('/ajouter-produit', methods=['GET', 'POST'])
+def ajouter_produit():
+    if request.method == 'POST':
+        nom_produit = request.form.get('name')
+        gamme = request.form.get('gamme')
+        date_echeance = request.form.get('date_echeance')
+        evolution_state = 0
+        username = request.form.get('username') 
+        ingredient_ids = request.form.getlist('ingredients')
+        if not nom_produit or not gamme or not date_echeance or not username:
+            return render_template('ajouter_produit.html')
+        try:
+            date_echeance = datetime.strptime(date_echeance, '%Y-%m-%d')
+            username = str(username)
+            nouveau_produit = Product(name=nom_produit)
+            db.session.add(nouveau_produit)
+            db.session.commit()
+            nouveau_detail = Product_detail(product_id=nouveau_produit.id, username=username, gamme=gamme, date_echeance=date_echeance, evolution_state=evolution_state)
+            db.session.add(nouveau_detail)
+            db.session.commit()
+            for ingredient_id in ingredient_ids:
+                ingredient = Ingredient.query.get(ingredient_id)
+                if ingredient:
+                    product_ingredient = Product_Ingredient(id_product=nouveau_produit.id, name_product=nouveau_produit.name, id_ingredient=ingredient.id, name_ingredient=ingredient.name)
+                    db.session.add(product_ingredient)
+            flash("Produit et détails ajoutés avec succès !", "success")
+            return redirect(url_for('routes.dashboard'))
+        except Exception as e:
+            logger.debug(f"Erreur lors de l'ajout : {str(e)}", "error")
+            flash(f"Erreur lors de l'ajout : {str(e)}", "error")
+            return redirect(url_for('routes.dashboard'))
+    ingredients = Ingredient.query.all()
+    return render_template('ajouter_produit.html', ingredients=ingredients)
+
+@bp.route('/modifier-produit/<int:produit_id>', methods=['GET', 'POST'])
+def modifier_produit(produit_id):
+    produit = Product.query.get(produit_id)
+    produit_detail = Product_detail.query.filter_by(product_id=produit_id).first()
+    comments = Comment.query.filter_by(product_id=produit_id).order_by(Comment.timestamp.desc()).all()
+
+    if not produit or not produit_detail:
+        flash("Produit introuvable.", "error")
+        return redirect(url_for('routes.dashboard'))
+
+    if request.method == 'POST':
+        try:
+            # Récupérer les données du formulaire
+            nom_produit = request.form.get('name')
+            gamme = request.form.get('gamme')
+            date_echeance = request.form.get('date_echeance')
+            username = request.form.get('username')
+            ingredient_ids = request.form.getlist('ingredients')
+            evolution_state = request.form.get('evolution_state')
+            comment_text = request.form.get('comments')  # Récupérer le commentaire
+
+            # Validation des champs obligatoires
+            if not nom_produit or not gamme or not date_echeance or not username:
+                flash("Tous les champs obligatoires doivent être remplis.", "error")
+                return redirect(url_for('routes.modifier_produit', produit_id=produit_id))
+
+            # Validation de `evolution_state`
+            try:
+                produit_detail.evolution_state = float(evolution_state)
+                if not (0 <= produit_detail.evolution_state <= 100):
+                    raise ValueError("La valeur d'avancement doit être comprise entre 0 et 100.")
+            except ValueError:
+                flash("La valeur d'avancement doit être un nombre valide compris entre 0 et 100.", "error")
+                return redirect(url_for('routes.modifier_produit', produit_id=produit_id))
+
+            # Mettre à jour les informations du produit
+            produit.name = nom_produit
+            produit_detail.gamme = gamme
+            produit_detail.date_echeance = datetime.strptime(date_echeance, '%Y-%m-%d')
+            produit_detail.username = username
+            db.session.commit()
+
+            # Mettre à jour les ingrédients associés
+            db.session.execute(
+                product_ingredients.delete().where(product_ingredients.c.id_product == produit_id)
+            )
+            for ingredient_id in ingredient_ids:
+                ingredient = Ingredient.query.get(ingredient_id)
+                if ingredient:
+                    db.session.execute(
+                        product_ingredients.insert().values(
+                            id_product=produit.id,
+                            name_product=produit.name,
+                            id_ingredient=ingredient.id,
+                            name_ingredient=ingredient.name
+                        )
+                    )
+
+            # Enregistrer le commentaire s'il existe
+            if comment_text:
+                new_comment = Comment(
+                    product_id=produit.id,
+                    username=username,
+                    text=comment_text,
+                    timestamp=datetime.utcnow()
+                )
+                db.session.add(new_comment)
+                db.session.commit()
+
+            db.session.commit()
+
+            flash("Produit modifié avec succès !", "success")
+            return redirect(url_for('routes.dashboard'))
+
+        except Exception as e:
+            logger.debug(f"Erreur lors de la modification : {str(e)}")
+            flash(f"Erreur lors de la modification : {str(e)}", "error")
+            return redirect(url_for('routes.modifier_produit', produit_id=produit_id))
+
+    # Charger les ingrédients pour le formulaire
+    ingredients = Ingredient.query.all()
+    selected_ingredients = [
+        row.id_ingredient
+        for row in db.session.execute(
+            db.select(product_ingredients.c.id_ingredient).where(product_ingredients.c.id_product == produit_id)
+        )
+    ]
+
+    return render_template(
+        'modifier_produit.html',
+        produit=produit,
+        produit_detail=produit_detail,
+        ingredients=ingredients,
+        selected_ingredients=selected_ingredients,
+        comments=comments
+    )
 
 
-@bp.route('/products/details/<int:product_id>', methods=['GET'])
-def product_detail(product_id):
-    product = Product.query.get(product_id)
-    if not product:
-        return jsonify({"message": "Produit non trouvé."}), 404
-    
-    return jsonify({
-        "id": product.id,
-        "name": product.name,
-        "description": product.description,
-        "stock": product.stock,
-        "version": product.version,
-    }), 200
 
-@bp.route('/suggestions', methods=['POST'])
-def suggest_perfume():
-    data = request.json
-    characteristics = data.get('characteristics', [])
-    
-    # Remplacez ceci par votre logique de suggestion
-    suggestions = []  # Remplissez avec des suggestions basées sur les caractéristiques
-    return jsonify({"suggestions": suggestions}), 200
 
+
+
+def register_routes(app):
+    app.register_blueprint(bp)

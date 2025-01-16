@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modifier un produit</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            padding: 0;
+            background-color: #f9f9f9;
+            color: #333;
+        }
+        h1 {
+            text-align: center;
+            color: #2980b9;
+        }
+        form {
+            max-width: 600px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+        input, select, textarea, button {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        input:focus, select:focus, textarea:focus {
+            border-color: #2980b9;
+            outline: none;
+        }
+        button {
+            background-color: #2980b9;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            border: none;
+        }
+        button:hover {
+            background-color: #6dd5fa;
+        }
+    </style>
+</head>
+<body>
+    <h1>Modifier le produit : {{ produit.name }}</h1>
+    <form method="POST" action="{{ url_for('routes.modifier_produit', produit_id=produit.id) }}">
+        <label for="name">Nom du produit :</label>
+        <input type="text" id="name" name="name" value="{{ produit.name }}" required>
+
+        <label for="gamme">Gamme :</label>
+        <input type="text" id="gamme" name="gamme" value="{{ produit_detail.gamme }}" required>
+
+        <label for="date_echeance">Date d'échéance :</label>
+        <input type="date" id="date_echeance" name="date_echeance" value="{{ produit_detail.date_echeance.strftime('%Y-%m-%d') }}" required>
+
+        <label for="username">Nom d'utilisateur :</label>
+        <input type="text" id="username" name="username" value="{{ produit_detail.username }}" required>
+
+        <label for="ingredients">Ingrédients :</label>
+        <select id="ingredients" name="ingredients" multiple>
+            {% for ingredient in ingredients %}
+            <option value="{{ ingredient.id }}" {% if ingredient.id in selected_ingredients %}selected{% endif %}>
+                {{ ingredient.name }}
+            </option>
+            {% endfor %}
+        </select>
+
+        <label for="evolution_state">Avancement (%):</label>
+        <input 
+            type="number" 
+            id="evolution_state" 
+            name="evolution_state" 
+            value="{{ produit_detail.evolution_state }}" 
+            min="0" 
+            max="100" 
+            step="0.01" 
+            required>
+        
+        <h3>Commentaires existants :</h3>
+        {% if comments %}
+            <ul>
+                {% for comment in comments %}
+                <li>
+                    <strong>{{ comment.username }}</strong> 
+                    <small>({{ comment.timestamp.strftime('%d/%m/%Y %H:%M') }})</small> :<br>
+                    {{ comment.text }}
+                </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>Aucun commentaire pour ce produit.</p>
+        {% endif %}
+
+        <h3>Ajouter un nouveau commentaire :</h3>
+        <form method="POST" action="{{ url_for('routes.modifier_produit', produit_id=produit.id) }}">
+            <!-- Autres champs pour modifier le produit -->
+
+            <label for="comments">Nouveau commentaire :</label>
+            <textarea id="comments" name="comments" rows="4" placeholder="Ajoutez votre commentaire ici..."></textarea>
+
+            <button type="submit">Enregistrer les modifications</button>
+        </form>
+    </form>
+</body>
+</html>
