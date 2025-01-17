@@ -3,52 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DashBoard</title>
+    <title>Produits</title>
     <style>
         body {
             font-family: Arial, sans-serif;
             background: linear-gradient(120deg, #2980b9, #6dd5fa);
             color: #333;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            height: 100vh;
             margin: 0;
         }
         .toolbar {
-            background: #2980b9;
-            color: white;
-            width: 100%;
-            padding: 10px 0;
-            position: fixed;
-            top: 0;
-            left: 0;
-            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
             display: flex;
-            justify-content: center;
-            gap: 20px;
+            justify-content: space-between;
+            align-items: center;
+            background: #2980b9;
+            padding: 10px 20px;
+            color: white;
         }
         .toolbar button {
-            background: transparent;
-            color: white;
+            background: white;
+            color: #2980b9;
             border: none;
+            border-radius: 5px;
             padding: 10px 15px;
-            font-size: 16px;
             cursor: pointer;
-            border-bottom: 2px solid transparent;
         }
         .toolbar button:hover {
-            border-bottom: 2px solid #6dd5fa;
+            background: #6dd5fa;
         }
         .container {
+            margin: 20px auto;
             background: white;
             padding: 20px 30px;
             border-radius: 10px;
             box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
-            width: 100%;
-            max-width: 700px;
+            max-width: 800px;
             text-align: center;
-            margin-top: 100px; /* Adjusted for toolbar space */
         }
         table {
             width: 100%;
@@ -87,86 +76,78 @@
 </head>
 <body>
     <div class="toolbar">
-        <button onclick="window.location.href='/ingredients'">Ingrédients</button>
-        <button onclick="window.location.href='/produits'">Produits</button>
+        <div>
+            <button onclick="window.location.href='{{ url_for('routes.dashboard') }}'">Tableau de bord</button>
+            <button onclick="window.location.href='{{ url_for('routes.logout') }}'">Déconnexion</button>
+        </div>
     </div>
-
-    <div class="container" id="ingredients">
-        <h2>Liste des ingrédients</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>Nom de l'ingrédient</th>
-                    <th>Prix</th>
-                    <th>Quantité</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for ingredient in ingredients %}
-                <tr onclick="selectRow(this, '{{ ingredient.id }}')">
-                    <td>{{ ingredient.name }}</td>
-                    <td>{{ ingredient.price }} €</td>
-                    <td>{{ ingredient.quantity }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-
-    <div class="container" id="produits">
+    <div class="container">
         <h2>Liste des produits</h2>
         <table>
             <thead>
                 <tr>
-                    <th>Nom du produit</th>
-                    <th>Username</th>
+                    <th>Nom du Produit</th>
+                    <th>Utilisateur</th>
                     <th>Avancement</th>
                 </tr>
             </thead>
             <tbody>
                 {% for produit in produits %}
-                <tr onclick="selectRow(this, '{{ produit.id }}')">
+                {% if produit.product_details %}
+                    {% for detail in produit.product_details %}
+                    <tr onclick="selectRow(this, '{{ produit.id }}')">
+                        <td>{{ produit.name }}</td>
+                        <td>{{ detail.username }}</td>
+                        <td>{{ detail.evolution_state }}</td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                <tr>
                     <td>{{ produit.name }}</td>
-                    <td>{{ produit.details.username }}</td>
-                    <td>{{ produit.details.evolution_state }}%</td>
+                    <td colspan="4">Aucun détail disponible</td>
                 </tr>
+                {% endif %}
                 {% endfor %}
             </tbody>
         </table>
+        
+        <button onclick="window.location.href='{{ url_for('routes.ajouter_produit') }}'">Ajouter un produit</button>
+        <button id="modifierButton" disabled onclick="modifySelected()">Modifier</button>
+        <button id="supprimerButton" disabled onclick="deleteSelected()">Supprimer</button>
     </div>
-
     <script>
         let selectedRow = null;
         let selectedId = null;
 
         function selectRow(row, id) {
-            // Deselect the previously selected row
+            // Désélectionne la ligne précédente
             if (selectedRow) {
                 selectedRow.classList.remove("selected");
             }
 
-            // Select the current row
+            // Sélectionne la nouvelle ligne
             selectedRow = row;
             selectedRow.classList.add("selected");
 
-            // Store the selected product ID
+            // Stocke l'ID du produit sélectionné
             selectedId = id;
 
-            // Enable the "Modifier" button
+            // Active les boutons "Modifier" et "Supprimer"
             document.getElementById("modifierButton").disabled = false;
+            document.getElementById("supprimerButton").disabled = false;
         }
 
         function modifySelected() {
             if (selectedId) {
-                // Construire directement l'URL avec l'ID sélectionné
+                // Redirige vers la page de modification
                 window.location.href = `/modifier-produit/${selectedId}`;
             }
         }
 
-        function scrollToSection(sectionId) {
-            const section = document.getElementById(sectionId);
-            if (section) {
-                section.scrollIntoView({ behavior: 'smooth' });
+        function deleteSelected() {
+            if (selectedId && confirm("Êtes-vous sûr de vouloir supprimer ce produit ?")) {
+                // Redirige vers l'URL de suppression
+                window.location.href = `/supprimer-produit/${selectedId}`;
             }
         }
     </script>
