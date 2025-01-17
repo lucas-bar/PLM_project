@@ -34,7 +34,7 @@
             margin-bottom: 5px;
             color: #555;
         }
-        input[type="text"], input[type="password"] {
+        input[type="text"], input[type="password"], select {
             width: 100%;
             padding: 10px;
             margin-bottom: 20px;
@@ -82,11 +82,18 @@
 <body>
     <div class="container">
         <h2>Register</h2>
-        <form method="POST" action="{{ url_for('routes.register')}}">
+        <form method="POST" action="{{ url_for('routes.register') }}">
             <label for="username">Username</label>
             <input type="text" id="username" name="username" placeholder="Enter your username" required>
             <label for="password">Password</label>
             <input type="password" id="password" name="password" placeholder="Enter your password" required>
+            
+            <label for="poste">Poste</label>
+            <select id="poste" name="poste" required>
+                <option value="developpement">Conception</option>
+                <option value="production">Production</option>
+            </select>
+            
             <button type="submit">Register</button>
         </form>
         {% with messages = get_flashed_messages(with_categories=true) %}

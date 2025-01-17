@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ajouter une usine</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(120deg, #2ecc71, #a6f77b);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .form-container {
+            background: white;
+            padding: 20px 30px;
+            border-radius: 10px;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+            width: 100%;
+            max-width: 400px;
+        }
+        h2 {
+            color: #27ae60;
+            text-align: center;
+        }
+        label {
+            display: block;
+            margin: 10px 0 5px;
+            font-weight: bold;
+        }
+        input, select {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            background: #27ae60;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #a6f77b;
+        }
+    </style>
+</head>
+<body>
+    <div class="form-container">
+        <h2>Ajouter une usine</h2>
+        <form method="POST" action="{{ url_for('routes.ajouter_usine') }}">
+            <label for="pays">Pays</label>
+            <select id="pays" name="pays" required>
+                <option value="France">France</option>
+                <option value="Allemagne">Allemagne</option>
+                <option value="Espagne">Espagne</option>
+                <option value="Italie">Italie</option>
+                <option value="Royaume-Uni">Royaume-Uni</option>
+                <option value="États-Unis">États-Unis</option>
+                <option value="Canada">Canada</option>
+                <option value="Brésil">Brésil</option>
+                <option value="Japon">Japon</option>
+                <option value="Inde">Inde</option>
+            </select>
+            
+            <label for="types">Type d'usine</label>
+            <select id="types" name="types" required>
+                <option value="Emballage">Emballage</option>
+                <option value="Embouteillage">Embouteillage</option>
+                <option value="Mélange">Mélange</option>
+                <option value="Filtration">Filtration</option>
+                <option value="Maturation">Maturation</option>
+                <option value="Extraction de matières premières">Extraction de matières premières</option>
+            </select>
+            
+            <button type="submit">Ajouter</button>
+        </form>
+    </div>
+</body>
+</html>

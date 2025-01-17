@@ -37,7 +37,7 @@ class Product(db.Model):
     __tablename__ = 'products'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(120), nullable=False)
-    product_details = db.relationship('Product_detail', back_populates='project')
+    product_details = db.relationship('Product_detail', back_populates='project', cascade='all, delete')
     ingredients = db.relationship('Ingredient', secondary=product_ingredients, back_populates='products')
 
 class Comment(db.Model):
@@ -56,6 +56,13 @@ class Product_detail(db.Model):
     gamme = db.Column(Enum('masculin', 'feminin', 'mixte', name='gamme_enum'), nullable=False, default='mixte')
     date_echeance = db.Column(db.DateTime, nullable=False)
     evolution_state = db.Column(db.Float, nullable=False)
+    etat = db.Column(db.Integer, nullable=False)
+    usine_emballage = db.Column(db.String(250), nullable=True)
+    usine_embouteillage = db.Column(db.String(250), nullable=True)
+    usine_melange = db.Column(db.String(250), nullable=True)
+    usine_filtration = db.Column(db.String(250), nullable=True)
+    usine_maturation = db.Column(db.String(250), nullable=True)
+    usine_extraction = db.Column(db.String(250), nullable=True)
     project = db.relationship('Product', back_populates='product_details')
     user = db.relationship('User', back_populates='product_details')
     
@@ -69,3 +76,18 @@ class Product_state(db.Model):
     address = db.Column(db.String(250), nullable=True)
     product = db.relationship('Ingredient', back_populates='product_states')
 
+
+# Modèle Product_state
+class Usine(db.Model):
+    __tablename__ = 'usines'
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    pays = db.Column(db.String(250), nullable=True)
+    types = db.Column(db.String(250), nullable=True)
+
+class Production(db.Model):
+    __tablename__ = 'productions'
+    product_id = db.Column(db.Integer, primary_key=True, nullable=False)
+    usines_id = db.Column(db.Integer, nullable=True)
+    aprod = db.Column(db.Integer, nullable=True)
+    prod = db.Column(db.Integer, nullable=True)
+    defect = db.Column(db.Integer, nullable=True)
